@@ -17,10 +17,10 @@ Product {
 
     Depends { name: "cpp" }
     Depends { name: "PProto" }
-    Depends { name: "Detection"; required: false }
-    Depends { name: "RapidJson"; required: false }
+    Depends { name: "QUtils" }
+    Depends { name: "RapidJson" }
     Depends { name: "SharedLib" }
-    Depends { name: "Yaml" }
+    //Depends { name: "Yaml" }
     Depends { name: "Qt"; submodules: ["core", "network"] }
 
     cpp.defines: project.cppDefines;

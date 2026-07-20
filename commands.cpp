@@ -10,7 +10,13 @@ namespace command {
 #define REGISTRY_COMMAND_MULTIPROC(COMMAND, UUID) \
     const QUuidEx COMMAND = command::Pool::Registry{UUID, #COMMAND, true};
 
-REGISTRY_COMMAND_SINGLPROC(ConfigChanged,   "686660f5-bdda-49b7-9484-e16bf907ff7f")
+REGISTRY_COMMAND_SINGLPROC(CobotExecutePlan,     "2b43d67c-26a2-4889-b55a-df787681a7c5")
+REGISTRY_COMMAND_SINGLPROC(CobotStopExecute,     "f1f4b015-dc59-43ca-a352-205a6b0a4291")
+REGISTRY_COMMAND_SINGLPROC(CobotLastPlanAction,  "b7b8e0b0-de01-4344-9d58-5bc48932be71")
+REGISTRY_COMMAND_SINGLPROC(CobotPlanBegin,       "6df740aa-3715-4e9b-9f2f-5a4705001150")
+REGISTRY_COMMAND_SINGLPROC(CobotPlanEnd,         "d346775f-e071-45c2-8f81-7504263c591e")
+REGISTRY_COMMAND_SINGLPROC(CobotPlanAction,      "8f02448e-4020-4bdd-aa95-6f55b53ec5d6")
+REGISTRY_COMMAND_SINGLPROC(CobotPlanExecuting,   "3a284743-7a31-456a-8bbc-db698af9bc3e")
 
 #undef REGISTRY_COMMAND_SINGLPROC
 #undef REGISTRY_COMMAND_MULTIPROC
@@ -19,21 +25,158 @@ REGISTRY_COMMAND_SINGLPROC(ConfigChanged,   "686660f5-bdda-49b7-9484-e16bf907ff7
 
 namespace data {
 
-// void ConfigChanged::toRaw(bserial::DataStream& stream) const
+void CobotExecutePlan::toRaw(bserial::DataStream& stream) const
+{
+    B_SERIALIZE_V1
+    stream << plan;
+    B_SERIALIZE_RETURN
+}
+
+void CobotExecutePlan::fromRaw(const bserial::RawVector& vect)
+{
+    B_DESERIALIZE_V1(vect)
+    stream >> plan;
+    B_DESERIALIZE_END
+}
+
+void CobotExecutePlanError::toRaw(bserial::DataStream& stream) const
+{
+    B_SERIALIZE_V1
+
+    // Структуры унаследованные от MessageError сериализуются в особом порядке,
+    // поэтому для них сериализация/десериализация базового класса не обязательна
+    // stream << B_BASE_CLASS(MessageError);
+
+    stream << plan;
+    stream << activePlan;
+    B_SERIALIZE_RETURN
+}
+
+void CobotExecutePlanError::fromRaw(const bserial::RawVector& vect)
+{
+    B_DESERIALIZE_V1(vect)
+
+    // Структуры унаследованные от MessageError сериализуются в особом порядке,
+    // поэтому для них сериализация/десериализация базового класса не обязательна
+    // stream >> B_BASE_CLASS(MessageError);
+
+    stream >> plan;
+    stream >> activePlan;
+    B_DESERIALIZE_END
+}
+
+void CobotActionInfo::toRaw(bserial::DataStream& stream) const
+{
+    B_SERIALIZE_V1
+    stream << plan;
+    stream << action;
+    stream << state;
+    stream << phase;
+    stream << error;
+    B_SERIALIZE_RETURN
+}
+
+void CobotActionInfo::fromRaw(const bserial::RawVector& vect)
+{
+    B_DESERIALIZE_V1(vect)
+    stream >> plan;
+    stream >> action;
+    stream >> state;
+    stream >> phase;
+    stream >> error;
+    B_DESERIALIZE_END
+}
+
+// void GetCobotState::toRaw(bserial::DataStream& stream) const
 // {
 //     B_SERIALIZE_V1
-//     stream << file;
-//     stream << phase;
+//     stream << plan;
+//     stream << action;
+//     stream << state;
+//     stream << error;
 //     B_SERIALIZE_RETURN
 // }
-//
-// void ConfigChanged::fromRaw(const bserial::RawVector& vect)
+
+// void GetCobotState::fromRaw(const bserial::RawVector& vect)
 // {
 //     B_DESERIALIZE_V1(vect)
-//     stream >> file;
-//     stream >> phase;
+//     stream >> plan;
+//     stream >> action;
+//     stream >> state;
+//     stream >> error;
 //     B_DESERIALIZE_END
 // }
 
+void CobotPlanBegin::toRaw(bserial::DataStream& stream) const
+{
+    B_SERIALIZE_V1
+    stream << plan;
+    B_SERIALIZE_RETURN
+}
+
+void CobotPlanBegin::fromRaw(const bserial::RawVector& vect)
+{
+    B_DESERIALIZE_V1(vect)
+    stream >> plan;
+    B_DESERIALIZE_END
+}
+
+void CobotPlanEnd::toRaw(bserial::DataStream& stream) const
+{
+    B_SERIALIZE_V1
+    stream << plan;
+    B_SERIALIZE_RETURN
+}
+
+void CobotPlanEnd::fromRaw(const bserial::RawVector& vect)
+{
+    B_DESERIALIZE_V1(vect)
+    stream >> plan;
+    B_DESERIALIZE_END
+}
+
 } // namespace data
 } // namespace pproto
+
+namespace alog {
+
+Line& operator<< (Line& line, const pproto::CobotActionState& actionState)
+{
+    if (line.toLogger())
+    {
+        switch (actionState)
+        {
+            case pproto::CobotActionState::Unknown    : line << "Unknown";    break;
+            case pproto::CobotActionState::Idle       : line << "Idle";       break;
+            case pproto::CobotActionState::Connection : line << "Connection"; break;
+            case pproto::CobotActionState::Disconnect : line << "Disconnect"; break;
+            case pproto::CobotActionState::PowerOn    : line << "PowerOn";    break;
+            case pproto::CobotActionState::PowerOff   : line << "PowerOff";   break;
+            case pproto::CobotActionState::Sleep      : line << "Sleep";      break;
+            case pproto::CobotActionState::MoveJoint  : line << "MoveJoint";  break;
+            case pproto::CobotActionState::MovePose   : line << "MovePose";   break;
+            case pproto::CobotActionState::MoveLine   : line << "MoveLine";   break;
+            case pproto::CobotActionState::MovePath   : line << "MovePath";   break;
+            case pproto::CobotActionState::UserCoord  : line << "UserCoord";  break;
+        }
+    }
+    return line;
+}
+
+Line& operator<< (Line& line, const pproto::CobotActionPhase& actionPhase)
+{
+    if (line.toLogger())
+    {
+        switch (actionPhase)
+        {
+            case pproto::CobotActionPhase::Unknown : line << "Unknown"; break;
+            case pproto::CobotActionPhase::Begin   : line << "Begin";   break;
+            case pproto::CobotActionPhase::End     : line << "End";     break;
+            case pproto::CobotActionPhase::Break   : line << "Break";   break;
+            case pproto::CobotActionPhase::Stop    : line << "Stop";    break;
+        }
+    }
+    return line;
+}
+
+} // namespace alog
