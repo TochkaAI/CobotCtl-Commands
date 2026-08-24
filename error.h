@@ -10,7 +10,7 @@ DECL_ERROR_CODE(product_license,           10, "73387aff-d4f8-461b-9789-b9600754
 DECL_ERROR_CODE(protect_key,               10, "14e27d0a-33a7-4018-abcd-05f5d0da3813", u8"Ключ аппаратной защиты для сервиса CobotCtl не обнаружен")
 
 //---
-DECL_ERROR_CODE(rpc_connection,            20, "74f75fbf-8a7c-4de6-b901-59e83ac998a2", u8"Не удалось выполнить RPC-подключение")
+DECL_ERROR_CODE(cobot_connection,          20, "74f75fbf-8a7c-4de6-b901-59e83ac998a2", u8"Не удалось выполнить подключение к коботу")
 DECL_ERROR_CODE(cobot_power_on,            20, "3fd768bc-cd8c-4f04-8e1c-cd02b91bc3fb", u8"Не удалось активировать кобота")
 DECL_ERROR_CODE(cobot_power_on_ext,        20, "d5e1783f-dbf7-401d-879f-0c6eb968537d", u8"Не удалось активировать кобота. Детали: %1")
 DECL_ERROR_CODE(cobot_running,             20, "d2ab88d6-232d-48e9-a03c-f6dcac44ead6", u8"Не удалось перевести кобота в рабочее состояние")

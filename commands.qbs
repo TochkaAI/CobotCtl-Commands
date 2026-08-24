@@ -32,6 +32,8 @@ Product {
     files: [
         "commands.cpp",
         "commands.h",
+        "coordinates.cpp",
+        "coordinates.h",
         "error.h",
     ]
 
