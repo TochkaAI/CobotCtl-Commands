@@ -14,6 +14,8 @@ DECL_ERROR_CODE(cobot_connection,          20, "74f75fbf-8a7c-4de6-b901-59e83ac9
 DECL_ERROR_CODE(cobot_power_on,            20, "3fd768bc-cd8c-4f04-8e1c-cd02b91bc3fb", u8"Не удалось активировать кобота")
 DECL_ERROR_CODE(cobot_power_on_ext,        20, "d5e1783f-dbf7-401d-879f-0c6eb968537d", u8"Не удалось активировать кобота. Детали: %1")
 DECL_ERROR_CODE(cobot_running,             20, "d2ab88d6-232d-48e9-a03c-f6dcac44ead6", u8"Не удалось перевести кобота в рабочее состояние")
+DECL_ERROR_CODE(cobot_power_off,           20, "4057fd33-3e57-480c-9d5c-060942322598", u8"Не удалось перевести кобота в состояние остановки")
+DECL_ERROR_CODE(cobot_power_off_ext,       20, "625a7df3-61ae-488b-92b3-b2b2df0517c4", u8"Не удалось перевести кобота в состояние остановки. Детали: %1")
 DECL_ERROR_CODE(cobot_api_interface,       20, "387f0eb0-0213-4f1e-b6d3-7c0ca06e9059", u8"Не удалось получить программный интерфейс %1")
 DECL_ERROR_CODE(cobot_call_func,           20, "fe534da4-87e1-45a5-8be5-debab8c00413", u8"Не удалось вызвать функцию %1. Код ошибки: %2")
 DECL_ERROR_CODE(cobot_path_buff_valid,     20, "f90d6c58-5650-455b-9dbd-8970d9612536", u8"Ошибка верификации данных для функции %1")

@@ -158,6 +158,7 @@ Line& operator<< (Line& line, const pproto::CobotActionState& actionState)
             case pproto::CobotActionState::MoveLine   : line << "MoveLine";   break;
             case pproto::CobotActionState::MovePath   : line << "MovePath";   break;
             case pproto::CobotActionState::UserCoord  : line << "UserCoord";  break;
+            case pproto::CobotActionState::TcpOffset  : line << "TcpOffset";  break;
         }
     }
     return line;
