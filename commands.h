@@ -11,6 +11,12 @@ namespace command {
 //----------------------------- Список команд --------------------------------
 
 /**
+  Команда возвращает информацию о текущем плане выполнения. Отсутствие контента
+  в ответном сообщении говорит о том, что никакой план не выполняется
+*/
+extern const QUuidEx CobotPlanInfo;
+
+/**
   Выполнить план перемещений
 */
 extern const QUuidEx CobotExecutePlan;
@@ -18,7 +24,20 @@ extern const QUuidEx CobotExecutePlan;
 /**
   Остановить выполнение текущего плана
 */
-extern const QUuidEx CobotStopExecute;
+extern const QUuidEx CobotStopExecution;
+
+/**
+  Команда останавливает/возобновляет выполнение текущего  плана.  Остановка
+  осуществляется через передачу в поле tag(0) значения 1. Для возобновления
+  выполнения плана надо передать в tag(0) значения 0
+*/
+extern const QUuidEx CobotPauseExecution;
+
+/**
+  Событие эмитируется в момент постановки на паузу текущего плана. Поле tag(0)
+  содержит состояние флага паузы
+*/
+//extern const QUuidEx CobotPauseChanged;
 
 /**
   Команда возвращает информацию по последнему действию кобота
@@ -48,19 +67,21 @@ extern const QUuidEx CobotPlanAction;
 */
 enum class CobotActionState : quint32
 {
-    Unknown     = 0,
-    Idle        = 1,
-    Connection  = 2,  // Подключение к API кобота
-    Disconnect  = 3,  // Отключение от API
-    PowerOn     = 4,  // Включение питания на коботе
-    PowerOff    = 5,  // Выключение питания на коботе
-    Sleep       = 6,  // Выполнение действия/action "Пауза"
-    MoveJoint   = 7,  // Установка заданных углов суставов
-    MovePose    = 8,  // Перемещение в заданную позицию
-    MoveLine    = 9,  // Перемещение в заданную позицию по линии
-    MovePath    = 10, // Перемещение по заданной траектории
-    UserCoord   = 11, // Установка пользовательских координат
-    TcpOffset   = 12, // Смещение координаты TCP
+    Unknown      = 0,
+    Idle         = 1,
+    Connection   = 2,  // Подключение к API кобота
+    Disconnect   = 3,  // Отключение от API
+    PowerOn      = 4,  // Включение питания на коботе
+    PowerOff     = 5,  // Выключение питания на коботе
+    Sleep        = 6,  // Выполнение действия/action "Пауза"
+    MoveJoint    = 7,  // Установка заданных углов суставов
+    MovePose     = 8,  // Перемещение в заданную позицию
+    MoveLine     = 9,  // Перемещение в заданную позицию по линии
+    MovePath     = 10, // Перемещение по заданной траектории
+    UserCoord    = 11, // Установка пользовательских координат
+    TcpOffset    = 12, // Смещение координаты TCP
+    RuntimeStart = 13,
+    RuntimeStop  = 14,
 };
 
 /**
@@ -82,15 +103,32 @@ enum class CobotActionPhase : quint32
 
 namespace data {
 
+struct CobotPlanInfoA : Data<&command::CobotPlanInfo,
+                              Message::Type::Answer>
+{
+    // Идентификатор плана
+    Identity identity;
+
+    // Признак приостановки выполнения плана
+    bool paused = {false};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_ITEM( "paused"   , paused   )
+    J_SERIALIZE_END
+};
+
 struct CobotExecutePlan : Data<&command::CobotExecutePlan,
                                 Message::Type::Command,
                                 Message::Type::Answer>
 {
     // Идентификатор плана
-    Identity plan;
+    Identity identity;
 
     DECLARE_B_SERIALIZE_FUNC
-    J_SERIALIZE_MAP_ONE( "plan" , plan )
+    J_SERIALIZE_MAP_ONE( "identity" , identity )
 };
 
 /**
@@ -100,24 +138,24 @@ struct CobotExecutePlanError : MessageError, Data<&command::CobotExecutePlan,
                                                    Message::Type::Answer>
 {
     // Идентификатор плана
-    Identity plan;
+    Identity identity;
 
     // Идентификатор плана выполняющегося в текущий момент
-    Identity activePlan;
+    Identity activeIdentity;
 
     DECLARE_B_SERIALIZE_FUNC
 
     J_SERIALIZE_BEGIN
         J_SERIALIZE_BASE( MessageError )
-        J_SERIALIZE_MAP_ITEM( "plan"        , plan       )
-        J_SERIALIZE_MAP_ITEM( "active_plan" , activePlan )
+        J_SERIALIZE_MAP_ITEM( "identity"        , identity       )
+        J_SERIALIZE_MAP_ITEM( "active_identity" , activeIdentity )
     J_SERIALIZE_END
 };
 
 struct CobotActionInfo
 {
-    Identity plan;
-    Identity action;
+    Identity plan;   // Идентификатор плана
+    Identity action; // Идентификатор действия
 
     CobotActionState state = {CobotActionState::Unknown};
     CobotActionPhase phase = {CobotActionPhase::Unknown};
@@ -143,20 +181,20 @@ struct CobotPlanBegin : Data<&command::CobotPlanBegin,
                               Message::Type::Event>
 {
     // Идентификатор плана
-    Identity plan;
+    Identity identity;
 
     DECLARE_B_SERIALIZE_FUNC
-    J_SERIALIZE_MAP_ONE( "plan" , plan )
+    J_SERIALIZE_MAP_ONE( "identity" , identity )
 };
 
 struct CobotPlanEnd : Data<&command::CobotPlanEnd,
                             Message::Type::Event>
 {
     // Идентификатор плана
-    Identity plan;
+    Identity identity;
 
     DECLARE_B_SERIALIZE_FUNC
-    J_SERIALIZE_MAP_ONE( "plan" , plan )
+    J_SERIALIZE_MAP_ONE( "identity" , identity )
 };
 
 struct CobotPlanAction : CobotActionInfo, Data<&command::CobotPlanAction,
