@@ -5,16 +5,43 @@
 #include "pproto/commands/base.h"
 #include "qutils/commands/identity.h"
 
+#include <vector>
+
 namespace pproto {
 namespace command {
 
 //----------------------------- Список команд --------------------------------
 
 /**
+  Команда возвращает информацию о доступных планах (статических/динамических)
+*/
+extern const QUuidEx CobotPlanList;
+
+/**
   Команда возвращает информацию о текущем плане выполнения. Отсутствие контента
   в ответном сообщении говорит о том, что никакой план не выполняется
 */
+extern const QUuidEx CobotActivePlan;
+
+/**
+  Команда возвращает информацию о статическом плане выполнения
+*/
 extern const QUuidEx CobotPlanInfo;
+
+/**
+  Команда возвращает информацию о динамическом плане выполнения
+*/
+extern const QUuidEx CobotDynamicPlanInfo;
+
+/**
+  Команда создает/обновляет динамический план выполнения
+*/
+extern const QUuidEx CobotDynamicPlanUpdate;
+
+/**
+  Команда удаляет динамический план выполнения
+*/
+extern const QUuidEx CobotDynamicPlanRemove;
 
 /**
   Выполнить план перемещений
@@ -60,6 +87,11 @@ extern const QUuidEx CobotPlanEnd;
 */
 extern const QUuidEx CobotPlanAction;
 
+/**
+  Команда возвращает текущие координаты кобота
+*/
+extern const QUuidEx CobotCurrentPose;
+
 } // namespace command
 
 /**
@@ -80,8 +112,8 @@ enum class CobotActionState : quint32
     MovePath     = 10, // Перемещение по заданной траектории
     UserCoord    = 11, // Установка пользовательских координат
     TcpOffset    = 12, // Смещение координаты TCP
-    RuntimeStart = 13,
-    RuntimeStop  = 14,
+    RuntimeStart = 13, // Запуск механизма API-RuntimeMachine
+    RuntimeStop  = 14, // Остановка механизма API-RuntimeMachine
 };
 
 /**
@@ -103,39 +135,10 @@ enum class CobotActionPhase : quint32
 
 namespace data {
 
-struct CobotPlanInfoA : Data<&command::CobotPlanInfo,
-                              Message::Type::Answer>
-{
-    // Идентификатор плана
-    Identity identity;
-
-    // Признак приостановки выполнения плана
-    bool paused = {false};
-
-    DECLARE_B_SERIALIZE_FUNC
-
-    J_SERIALIZE_BEGIN
-        J_SERIALIZE_MAP_ITEM( "identity" , identity )
-        J_SERIALIZE_MAP_ITEM( "paused"   , paused   )
-    J_SERIALIZE_END
-};
-
-struct CobotExecutePlan : Data<&command::CobotExecutePlan,
-                                Message::Type::Command,
-                                Message::Type::Answer>
-{
-    // Идентификатор плана
-    Identity identity;
-
-    DECLARE_B_SERIALIZE_FUNC
-    J_SERIALIZE_MAP_ONE( "identity" , identity )
-};
-
 /**
-  Структура с расширенной информацией об ошибке для команды ExecuteCobotPlan
+  Структура с расширенной информацией об ошибке
 */
-struct CobotExecutePlanError : MessageError, Data<&command::CobotExecutePlan,
-                                                   Message::Type::Answer>
+struct CobotPlanError : MessageError
 {
     // Идентификатор плана
     Identity identity;
@@ -152,10 +155,101 @@ struct CobotExecutePlanError : MessageError, Data<&command::CobotExecutePlan,
     J_SERIALIZE_END
 };
 
+struct CobotPlanListA : Data<&command::CobotPlanList,
+                              Message::Type::Answer>
+{
+    struct Item
+    {
+        // Идентификатор плана
+        Identity identity;
+
+        // Описание плана
+        QString descript;
+
+        DECLARE_B_SERIALIZE_FUNC
+
+        J_SERIALIZE_BEGIN
+            J_SERIALIZE_MAP_ITEM( "identity" , identity )
+            J_SERIALIZE_MAP_ITEM( "descript" , descript )
+        J_SERIALIZE_END
+    };
+
+    // Список статических планов
+    QList<Item> plans;
+
+    // Список динамических планов
+    QList<Item> dynamicPlans;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "plans"         , plans        )
+        J_SERIALIZE_MAP_ITEM( "dynamic_plans" , dynamicPlans )
+    J_SERIALIZE_END
+};
+
+struct CobotActivePlanA : Data<&command::CobotActivePlan,
+                                Message::Type::Answer>
+{
+    typedef container_ptr<CobotActivePlanA> Ptr;
+
+    // Идентификатор плана
+    Identity identity;
+
+    // Описание плана
+    QString descript;
+
+    // Признак динамического плана
+    bool dynamic = {false};
+
+    // Признак приостановки выполнения плана
+    bool paused = {false};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_ITEM( "descript" , descript )
+        J_SERIALIZE_MAP_ITEM( "dynamic"  , dynamic  )
+        J_SERIALIZE_MAP_ITEM( "paused"   , paused   )
+    J_SERIALIZE_END
+};
+
+struct CobotExecutePlan : Data<&command::CobotExecutePlan,
+                                Message::Type::Command,
+                                Message::Type::Answer>
+{
+    // Идентификатор плана
+    Identity identity;
+
+    // Признак динамического плана
+    bool dynamic = {false};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_OPT ( "dynamic"  , dynamic  )
+    J_SERIALIZE_END
+};
+
+/**
+  Структура с расширенной информацией об ошибке для команды CobotExecutePlan
+*/
+struct CobotExecutePlanError : CobotPlanError, Data<&command::CobotExecutePlan,
+                                                     Message::Type::Answer>
+{};
+
 struct CobotActionInfo
 {
-    Identity plan;   // Идентификатор плана
-    Identity action; // Идентификатор действия
+    // Идентификатор плана
+    Identity plan;
+
+    // Признак динамического плана
+    bool dynamic = {false};
+
+    // Идентификатор действия
+    Identity action;
 
     CobotActionState state = {CobotActionState::Unknown};
     CobotActionPhase phase = {CobotActionPhase::Unknown};
@@ -165,11 +259,12 @@ struct CobotActionInfo
     DECLARE_B_SERIALIZE_FUNC
 
     J_SERIALIZE_BEGIN
-        J_SERIALIZE_MAP_ITEM( "plan"   , plan   )
-        J_SERIALIZE_MAP_ITEM( "action" , action )
-        J_SERIALIZE_MAP_ITEM( "state"  , state  )
-        J_SERIALIZE_MAP_ITEM( "phase"  , phase  )
-        J_SERIALIZE_MAP_ITEM( "error"  , error  )
+        J_SERIALIZE_MAP_ITEM( "plan"    , plan    )
+        J_SERIALIZE_MAP_ITEM( "dynamic" , dynamic )
+        J_SERIALIZE_MAP_ITEM( "action"  , action  )
+        J_SERIALIZE_MAP_ITEM( "state"   , state   )
+        J_SERIALIZE_MAP_ITEM( "phase"   , phase   )
+        J_SERIALIZE_MAP_ITEM( "error"   , error   )
     J_SERIALIZE_END
 };
 
@@ -183,8 +278,15 @@ struct CobotPlanBegin : Data<&command::CobotPlanBegin,
     // Идентификатор плана
     Identity identity;
 
+    // Признак динамического плана
+    bool dynamic = {false};
+
     DECLARE_B_SERIALIZE_FUNC
-    J_SERIALIZE_MAP_ONE( "identity" , identity )
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_OPT ( "dynamic"  , dynamic  )
+    J_SERIALIZE_END
 };
 
 struct CobotPlanEnd : Data<&command::CobotPlanEnd,
@@ -193,13 +295,536 @@ struct CobotPlanEnd : Data<&command::CobotPlanEnd,
     // Идентификатор плана
     Identity identity;
 
+    // Признак динамического плана
+    bool dynamic = {false};
+
     DECLARE_B_SERIALIZE_FUNC
-    J_SERIALIZE_MAP_ONE( "identity" , identity )
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_OPT ( "dynamic"  , dynamic  )
+    J_SERIALIZE_END
 };
 
 struct CobotPlanAction : CobotActionInfo, Data<&command::CobotPlanAction,
                                                 Message::Type::Event>
 {};
+
+struct CobotPose : std::vector<double>
+{
+    CobotPose() = default;
+    CobotPose(CobotPose&&) = default;
+    CobotPose(const CobotPose&) = default;
+
+    CobotPose& operator= (CobotPose&&) = default;
+    CobotPose& operator= (const CobotPose&) = default;
+
+    CobotPose(std::vector<double>&&);
+    CobotPose(const std::vector<double>&);
+
+    CobotPose& operator= (std::vector<double>&&);
+    CobotPose& operator= (const std::vector<double>&);
+
+    DECLARE_B_SERIALIZE_FUNC
+    DECLARE_J_SERIALIZE_FUNC
+};
+
+/**
+  Содержит информацию по размерностям для линейных  и  угловых  координат.
+  Линейные размеры могут быть представлены в метрах/миллиметрах, угловые -
+  в радианах/градусах
+*/
+struct CobotDimension
+{
+    bool millimeter = {false};
+    bool degree = {false};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_OPT( "millimeter" , millimeter )
+        J_SERIALIZE_MAP_OPT( "degree"     , degree     )
+    J_SERIALIZE_END
+};
+
+/**
+  Параметры определяющие динамику движений кобота. Для угловых перемещений
+  (move_joint) параметры acceleration, velocity задаются  в градусах,  для
+  линейных перемещений (move_line, move_pose) параметры acc, vel  задаются
+  в метрах
+*/
+struct CobotDynamics
+{
+    double speedFraction = {0.3};
+    double acceleration  = {3};
+    double velocity      = {2};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_OPT( "speed_fraction" , speedFraction )
+        J_SERIALIZE_MAP_OPT( "acceleration"   , acceleration  )
+        J_SERIALIZE_MAP_OPT( "velocity"       , velocity      )
+    J_SERIALIZE_END
+};
+
+/**
+  Базовая структура для действия
+*/
+struct CobotAction
+{
+    virtual ~CobotAction() = default;
+
+    enum class Type : quint32
+    {
+        Unknown   = 0,
+        Sleep     = 1,
+        MoveJoint = 2,
+        MovePose  = 3,
+        MoveLine  = 4,
+        MovePath  = 5,
+        UserCoord = 6,
+        TcpOffset = 7,
+    };
+    virtual Type type() const {return Type::Unknown;}
+
+    QString stringType;
+    data::Identity identity;
+
+    typedef lst::List<CobotAction, lst::CompareItemDummy> List;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BASE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "string_type" , stringType )
+        J_SERIALIZE_MAP_ITEM( "identity"    , identity   )
+    J_SERIALIZE_BASE_END
+};
+
+struct CobotSleepAction : CobotAction
+{
+    Type type() const {return Type::Sleep;}
+
+    // Время паузы (в миллисекундах)
+    int time = {0};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_BASE( CobotAction )
+        J_SERIALIZE_MAP_ITEM( "time" , time )
+    J_SERIALIZE_END
+};
+
+struct CobotMoveJointAction : CobotAction
+{
+    Type type() const {return Type::MoveJoint;}
+
+    CobotDimension dimension;
+    CobotDynamics  dynamics;
+
+    // Углы суставов
+    QList<CobotPose> joints;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_BASE( CobotAction )
+        J_SERIALIZE_MAP_OPT ( "dimension", dimension )
+        J_SERIALIZE_MAP_OPT ( "dynamics" , dynamics  )
+        J_SERIALIZE_MAP_ITEM( "joints"   , joints    )
+    J_SERIALIZE_END
+};
+
+struct CobotMovePoseAction : CobotAction
+{
+    Type type() const {return Type::MovePose;}
+
+    CobotDimension dimension;
+    CobotDynamics  dynamics;
+
+    // Координаты TCP
+    QList<CobotPose> poses;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_BASE( CobotAction )
+        J_SERIALIZE_MAP_OPT ( "dimension", dimension )
+        J_SERIALIZE_MAP_OPT ( "dynamics" , dynamics  )
+        J_SERIALIZE_MAP_ITEM( "poses"    , poses     )
+    J_SERIALIZE_END
+};
+
+struct CobotMoveLineAction : CobotMovePoseAction
+{
+    Type type() const {return Type::MoveLine;}
+};
+
+struct CobotMovePathAction : CobotAction
+{
+    Type type() const {return Type::MovePath;}
+
+    CobotDimension dimension;
+    CobotDynamics  dynamics;
+
+    // Координаты TCP
+    QList<CobotPose> poses;
+
+    // Полный путь до файла с координатами
+    QString posesFilePath;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_BASE( CobotAction )
+        J_SERIALIZE_MAP_OPT ( "dimension"       , dimension     )
+        J_SERIALIZE_MAP_OPT ( "dynamics"        , dynamics      )
+        J_SERIALIZE_MAP_ITEM( "poses"           , poses         )
+        J_SERIALIZE_MAP_OPT ( "poses_file_path" , posesFilePath )
+    J_SERIALIZE_END
+};
+
+struct CobotUserCoordAction : CobotAction
+{
+    Type type() const {return Type::UserCoord;}
+
+    CobotDimension dimension;
+
+    // Флаг сброса локальных координат к глобальным
+    bool reset = {false};
+
+    enum class Calibrate
+    {
+        ByCurrentPose = 0, // За нулевую точку пользовательской системы
+                           // координат берется текущее положение TCP.
+        ByThreePoints = 1  // Пользовательская система координат создается
+                           // на основе трех точек.
+    };
+
+    Calibrate calibrate = {Calibrate::ByCurrentPose};
+
+    // Type
+    //   0 - oxy origin, +x axis, xy plane (+y direction)
+    //   1 - oxz origin, +x axis, xz plane (+z direction)
+    //   2 - oyz origin, +y axis, yz plane (+z direction)
+    //   3 - oyx origin, +y axis, yx plane (+x direction)
+    //   4 - ozx origin, +z axis, zx plane (+x direction)
+    //   5 - ozy origin, +z axis, zy plane (+y direction)
+    int calibrateType = {0};
+
+    // Три точки для создания пользовательской системы координат
+    QList<CobotPose> calibratePoints;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_BASE( CobotAction )
+        J_SERIALIZE_MAP_OPT( "dimension"        , dimension       )
+        J_SERIALIZE_MAP_OPT( "reset"            , reset           )
+        J_SERIALIZE_MAP_OPT( "calibrate"        , calibrate       )
+        J_SERIALIZE_MAP_OPT( "calibrate_type"   , calibrateType   )
+        J_SERIALIZE_MAP_OPT( "calibrate_points" , calibratePoints )
+    J_SERIALIZE_END
+};
+
+struct CobotTcpOffsetAction : CobotAction
+{
+    Type type() const {return Type::TcpOffset;}
+
+    CobotDimension dimension;
+
+    // Смещение TCP
+    CobotPose offset;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_BASE( CobotAction )
+        J_SERIALIZE_MAP_OPT( "dimension" , dimension )
+        J_SERIALIZE_MAP_OPT( "offset"    , offset    )
+    J_SERIALIZE_END
+};
+
+struct CobotPlan : clife_base
+{
+    typedef clife_ptr<CobotPlan> Ptr;
+
+    Identity identity;
+    QString  descript;
+
+    // Признак динамического плана
+    bool dynamic = {false};
+
+    // Отключение питание на коботе после выполнения плана
+    bool powerOff = {false};
+
+    CobotAction::List actions;
+
+    typedef Identity::Find<CobotPlan> CobotPlanFind;
+    typedef lst::List<CobotPlan, CobotPlanFind, clife_alloc<CobotPlan>> List;
+
+    // Вспомогательная структура для сериализации гетерогенного списка действий
+    struct ActionSerialize
+    {
+        CobotAction::Type type = {CobotAction::Type::Unknown};
+        SByteArray data;
+
+        J_SERIALIZE_BEGIN
+            J_SERIALIZE_ITEM( type )
+            J_SERIALIZE_ITEM( data )
+        J_SERIALIZE_END
+    };
+
+    DECLARE_B_SERIALIZE_FUNC
+    DECLARE_J_SERIALIZE_FUNC
+};
+
+struct CobotPlanInfo : Data<&command::CobotPlanInfo,
+                             Message::Type::Command,
+                             Message::Type::Answer>
+{
+    // Идентификатор плана
+    Identity identity;
+
+    // Информация о плане
+    CobotPlan::Ptr plan;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_OPT ( "plan"     , plan     )
+    J_SERIALIZE_END
+};
+
+/**
+  Структура с расширенной информацией об ошибке для команды CobotPlanInfo
+*/
+struct CobotPlanInfoError : CobotPlanError, Data<&command::CobotPlanInfo,
+                                                  Message::Type::Answer>
+{};
+
+struct CobotDynamicPlanInfo : Data<&command::CobotDynamicPlanInfo,
+                                    Message::Type::Command,
+                                    Message::Type::Answer>
+{
+    // Идентификатор плана
+    Identity identity;
+
+    // Информация о плане
+    CobotPlan::Ptr plan;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "identity" , identity )
+        J_SERIALIZE_MAP_OPT ( "plan"     , plan     )
+    J_SERIALIZE_END
+};
+
+/**
+  Структура с расширенной информацией об ошибке для команды CobotDynamicPlanInfo
+*/
+struct CobotDynamicPlanInfoError : CobotPlanError,
+                                   Data<&command::CobotDynamicPlanInfo,
+                                         Message::Type::Answer>
+{};
+
+struct CobotDynamicPlanUpdate : Data<&command::CobotDynamicPlanUpdate,
+                                      Message::Type::Command>
+{
+    CobotPlan::Ptr plan;
+
+    DECLARE_B_SERIALIZE_FUNC
+    J_SERIALIZE_MAP_ONE( "plan" , plan )
+};
+
+struct CobotDynamicPlanUpdateA : Data<&command::CobotDynamicPlanUpdate,
+                                       Message::Type::Answer>
+{
+    // Идентификатор обновленного плана
+    Identity identity;
+
+    DECLARE_B_SERIALIZE_FUNC
+    J_SERIALIZE_MAP_ONE( "identity" , identity )
+};
+
+struct CobotDynamicPlanRemove : Data<&command::CobotDynamicPlanRemove,
+                                      Message::Type::Command,
+                                      Message::Type::Answer>
+{
+    // Идентификатор плана
+    Identity identity;
+
+    DECLARE_B_SERIALIZE_FUNC
+    J_SERIALIZE_MAP_ONE( "identity" , identity )
+};
+
+/**
+  Структура с расширенной информацией об ошибке для команды CobotDynamicPlanRemove
+*/
+struct CobotDynamicPlanRemoveError : CobotPlanError,
+                                     Data<&command::CobotDynamicPlanRemove,
+                                           Message::Type::Answer>
+{};
+
+struct CobotCurrentPose : Data<&command::CobotCurrentPose,
+                                Message::Type::Command>
+{
+    CobotDimension dimension;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_OPT( "dimension" , dimension )
+    J_SERIALIZE_END
+};
+
+struct CobotCurrentPoseA : Data<&command::CobotCurrentPose,
+                                 Message::Type::Answer>
+{
+    CobotDimension dimension;
+
+    // Текущие углы суставов кобота
+    CobotPose joints;
+
+    // Текущее положение TCP в декартовых координатах
+    CobotPose tcpPose;
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_OPT( "dimension" , dimension )
+        J_SERIALIZE_MAP_OPT( "joints"    , joints    )
+        J_SERIALIZE_MAP_OPT( "tcp_pose"  , tcpPose   )
+    J_SERIALIZE_END
+};
+
+//------------------------ Функции json-сериализации -------------------------
+
+template<typename This, typename Packer>
+Packer& CobotPose::jserialize(const This* ct, Packer& p)
+{
+    This* t = const_cast<This*>(ct);
+    //p.startObject();
+    std::vector<double> *v = t;
+    p & *v;
+    //return p.endObject();
+    return p;
+}
+
+template<typename This, typename Packer>
+Packer& CobotPlan::jserialize(const This* ct, Packer& p)
+{
+    This* t = const_cast<This*>(ct);
+
+    p.startObject();
+
+    J_SERIALIZE_MAP_ITEM( "identity"  , identity )
+    J_SERIALIZE_MAP_OPT ( "descript"  , descript )
+    J_SERIALIZE_MAP_OPT ( "dynamic"   , dynamic  )
+    J_SERIALIZE_MAP_OPT ( "power_off" , powerOff )
+
+    if (p.isWriter())
+    {
+        QList<ActionSerialize> serializeActions;
+        for (CobotAction* action : t->actions)
+        {
+            ActionSerialize serialize;
+            if (CobotSleepAction* act = dynamic_cast<CobotSleepAction*>(action))
+            {
+                serialize.type = act->type();
+                serialize.data = act->toJson();
+                serializeActions.append(serialize);
+            }
+            else if (CobotMoveJointAction* act = dynamic_cast<CobotMoveJointAction*>(action))
+            {
+                serialize.type = act->type();
+                serialize.data = act->toJson();
+                serializeActions.append(serialize);
+            }
+            else if (CobotMovePoseAction* act = dynamic_cast<CobotMovePoseAction*>(action))
+            {
+                serialize.type = act->type();
+                serialize.data = act->toJson();
+                serializeActions.append(serialize);
+            }
+            else if (CobotMoveLineAction* act = dynamic_cast<CobotMoveLineAction*>(action))
+            {
+                serialize.type = act->type();
+                serialize.data = act->toJson();
+                serializeActions.append(serialize);
+            }
+            // else if (CobotMovePathAction* act = dynamic_cast<CobotMovePathAction*>(action))
+            // {
+            // }
+            else if (CobotUserCoordAction* act = dynamic_cast<CobotUserCoordAction*>(action))
+            {
+                serialize.type = act->type();
+                serialize.data = act->toJson();
+                serializeActions.append(serialize);
+            }
+            else if (CobotTcpOffsetAction* act = dynamic_cast<CobotTcpOffsetAction*>(action))
+            {
+                serialize.type = act->type();
+                serialize.data = act->toJson();
+                serializeActions.append(serialize);
+            }
+        }
+        p.member("actions") & serializeActions;
+    }
+
+    if (p.isReader())
+    {
+        QList<ActionSerialize> serializeActions;
+        p.member("actions", true /*optional*/) & serializeActions;
+
+        for (const ActionSerialize& serialize : serializeActions)
+        {
+            if (CobotAction::Type::Sleep == serialize.type)
+            {
+                CobotSleepAction* act = new CobotSleepAction;
+                act->fromJson(serialize.data);
+                t->actions.add(act);
+            }
+            else if (CobotAction::Type::MoveJoint == serialize.type)
+            {
+                CobotMoveJointAction* act = new CobotMoveJointAction;
+                act->fromJson(serialize.data);
+                t->actions.add(act);
+            }
+            else if (CobotAction::Type::MovePose == serialize.type)
+            {
+                CobotMovePoseAction* act = new CobotMovePoseAction;
+                act->fromJson(serialize.data);
+                t->actions.add(act);
+            }
+            else if (CobotAction::Type::MoveLine == serialize.type)
+            {
+                CobotMoveLineAction* act = new CobotMoveLineAction;
+                act->fromJson(serialize.data);
+                t->actions.add(act);
+            }
+            // else if (CobotAction::Type::MovePath == serialize.type)
+            // {
+            // }
+            else if (CobotAction::Type::UserCoord == serialize.type)
+            {
+                CobotUserCoordAction* act = new CobotUserCoordAction;
+                act->fromJson(serialize.data);
+                t->actions.add(act);
+            }
+            else if (CobotAction::Type::TcpOffset == serialize.type)
+            {
+                CobotTcpOffsetAction* act = new CobotTcpOffsetAction;
+                act->fromJson(serialize.data);
+                t->actions.add(act);
+            }
+        }
+    }
+    return p.endObject();
+}
 
 } // namespace data
 } // namespace pproto
