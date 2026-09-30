@@ -92,6 +92,23 @@ extern const QUuidEx CobotPlanAction;
 */
 extern const QUuidEx CobotCurrentPose;
 
+/**
+  Команда возвращает статус рабочего состояния кобота. В активном состоянии
+  поле tag(0) будет содержать значения 1, в состоянии остановки поле tag(0)
+  будет содержать 0.
+*/
+extern const QUuidEx CobotPowerInfo;
+
+/**
+  Команда переводит кобота в активное состояние
+*/
+extern const QUuidEx CobotPowerOn;
+
+/**
+  Команда переводит кобота в состояние остановки
+*/
+extern const QUuidEx CobotPowerOff;
+
 } // namespace command
 
 /**
