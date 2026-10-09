@@ -61,15 +61,9 @@ extern const QUuidEx CobotStopExecution;
 extern const QUuidEx CobotPauseExecution;
 
 /**
-  Событие эмитируется в момент постановки на паузу текущего плана. Поле tag(0)
-  содержит состояние флага паузы
-*/
-//extern const QUuidEx CobotPauseChanged;
-
-/**
   Команда возвращает информацию по последнему действию кобота
 */
-extern const QUuidEx CobotLastPlanAction;
+extern const QUuidEx CobotLastAction;
 
 /**
   Событие эмитируется в момент начала выполнения cobot-плана
@@ -268,6 +262,12 @@ struct CobotActionInfo
     // Идентификатор действия
     Identity action;
 
+    // Индекс текущего исполняемого действия
+    int indexAction = {-1};
+
+    // Общее количество действий
+    int totalActions = {-1};
+
     CobotActionState state = {CobotActionState::Unknown};
     CobotActionPhase phase = {CobotActionPhase::Unknown};
 
@@ -276,17 +276,19 @@ struct CobotActionInfo
     DECLARE_B_SERIALIZE_FUNC
 
     J_SERIALIZE_BEGIN
-        J_SERIALIZE_MAP_ITEM( "plan"    , plan    )
-        J_SERIALIZE_MAP_ITEM( "dynamic" , dynamic )
-        J_SERIALIZE_MAP_ITEM( "action"  , action  )
-        J_SERIALIZE_MAP_ITEM( "state"   , state   )
-        J_SERIALIZE_MAP_ITEM( "phase"   , phase   )
-        J_SERIALIZE_MAP_ITEM( "error"   , error   )
+        J_SERIALIZE_MAP_ITEM( "plan"          , plan         )
+        J_SERIALIZE_MAP_ITEM( "dynamic"       , dynamic      )
+        J_SERIALIZE_MAP_ITEM( "action"        , action       )
+        J_SERIALIZE_MAP_ITEM( "index_action"  , indexAction  )
+        J_SERIALIZE_MAP_ITEM( "total_actions" , totalActions )
+        J_SERIALIZE_MAP_ITEM( "state"         , state        )
+        J_SERIALIZE_MAP_ITEM( "phase"         , phase        )
+        J_SERIALIZE_MAP_ITEM( "error"         , error        )
     J_SERIALIZE_END
 };
 
-struct CobotLastPlanAction : CobotActionInfo, Data<&command::CobotLastPlanAction,
-                                                    Message::Type::Answer>
+struct CobotLastAction : CobotActionInfo, Data<&command::CobotLastAction,
+                                                Message::Type::Answer>
 {};
 
 struct CobotPlanBegin : Data<&command::CobotPlanBegin,

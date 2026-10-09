@@ -19,8 +19,7 @@ REGISTRY_COMMAND_SINGLPROC(CobotDynamicPlanRemove, "970ce725-489f-4586-8077-4462
 REGISTRY_COMMAND_SINGLPROC(CobotExecutePlan,       "2b43d67c-26a2-4889-b55a-df787681a7c5")
 REGISTRY_COMMAND_SINGLPROC(CobotStopExecution,     "f1f4b015-dc59-43ca-a352-205a6b0a4291")
 REGISTRY_COMMAND_SINGLPROC(CobotPauseExecution,    "4f3a14d0-afb2-40f1-8a95-2de3466c7e79")
-//REGISTRY_COMMAND_SINGLPROC(CobotPauseChanged,    "83925428-6c97-468e-9c3d-7994e11b83ec")
-REGISTRY_COMMAND_SINGLPROC(CobotLastPlanAction,    "b7b8e0b0-de01-4344-9d58-5bc48932be71")
+REGISTRY_COMMAND_SINGLPROC(CobotLastAction,        "b7b8e0b0-de01-4344-9d58-5bc48932be71")
 REGISTRY_COMMAND_SINGLPROC(CobotPlanBegin,         "6df740aa-3715-4e9b-9f2f-5a4705001150")
 REGISTRY_COMMAND_SINGLPROC(CobotPlanEnd,           "d346775f-e071-45c2-8f81-7504263c591e")
 REGISTRY_COMMAND_SINGLPROC(CobotPlanAction,        "8f02448e-4020-4bdd-aa95-6f55b53ec5d6")
@@ -139,6 +138,8 @@ void CobotActionInfo::toRaw(bserial::DataStream& stream) const
     stream << state;
     stream << phase;
     stream << error;
+    stream << indexAction;
+    stream << totalActions;
     B_SERIALIZE_RETURN
 }
 
@@ -151,6 +152,8 @@ void CobotActionInfo::fromRaw(const bserial::RawVector& vect)
     stream >> state;
     stream >> phase;
     stream >> error;
+    stream >> indexAction;
+    stream >> totalActions;
     B_DESERIALIZE_END
 }
 
