@@ -2,8 +2,9 @@
 
 #include "shared/container_ptr.h"
 #include "shared/logger/logger.h"
+
 #include "pproto/commands/base.h"
-#include "qutils/commands/identity.h"
+#include "pproto/commands/identity.h"
 
 #include <vector>
 
@@ -152,10 +153,10 @@ namespace data {
 struct CobotPlanError : MessageError
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Идентификатор плана выполняющегося в текущий момент
-    Identity activeIdentity;
+    IdentityS activeIdentity;
 
     DECLARE_B_SERIALIZE_FUNC
 
@@ -172,7 +173,7 @@ struct CobotPlanListA : Data<&command::CobotPlanList,
     struct Item
     {
         // Идентификатор плана
-        Identity identity;
+        IdentityS identity;
 
         // Описание плана
         QString descript;
@@ -205,7 +206,7 @@ struct CobotActivePlanA : Data<&command::CobotActivePlan,
     typedef container_ptr<CobotActivePlanA> Ptr;
 
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Описание плана
     QString descript;
@@ -231,7 +232,7 @@ struct CobotExecutePlan : Data<&command::CobotExecutePlan,
                                 Message::Type::Answer>
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Признак динамического плана
     bool dynamic = {false};
@@ -254,13 +255,13 @@ struct CobotExecutePlanError : CobotPlanError, Data<&command::CobotExecutePlan,
 struct CobotActionInfo
 {
     // Идентификатор плана
-    Identity plan;
+    IdentityS plan;
 
     // Признак динамического плана
     bool dynamic = {false};
 
     // Идентификатор действия
-    Identity action;
+    IdentityS action;
 
     // Индекс текущего исполняемого действия
     int indexAction = {-1};
@@ -295,7 +296,7 @@ struct CobotPlanBegin : Data<&command::CobotPlanBegin,
                               Message::Type::Event>
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Признак динамического плана
     bool dynamic = {false};
@@ -312,7 +313,7 @@ struct CobotPlanEnd : Data<&command::CobotPlanEnd,
                             Message::Type::Event>
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Признак динамического плана
     bool dynamic = {false};
@@ -408,7 +409,7 @@ struct CobotAction
     virtual Type type() const {return Type::Unknown;}
 
     QString stringType;
-    data::Identity identity;
+    IdentityS identity;
 
     typedef lst::List<CobotAction, lst::CompareItemDummy> List;
 
@@ -569,8 +570,8 @@ struct CobotPlan : clife_base
 {
     typedef clife_ptr<CobotPlan> Ptr;
 
-    Identity identity;
-    QString  descript;
+    IdentityS identity;
+    QString   descript;
 
     // Признак динамического плана
     bool dynamic = {false};
@@ -604,7 +605,7 @@ struct CobotPlanInfo : Data<&command::CobotPlanInfo,
                              Message::Type::Answer>
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Информация о плане
     CobotPlan::Ptr plan;
@@ -629,7 +630,7 @@ struct CobotDynamicPlanInfo : Data<&command::CobotDynamicPlanInfo,
                                     Message::Type::Answer>
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     // Информация о плане
     CobotPlan::Ptr plan;
@@ -663,7 +664,7 @@ struct CobotDynamicPlanUpdateA : Data<&command::CobotDynamicPlanUpdate,
                                        Message::Type::Answer>
 {
     // Идентификатор обновленного плана
-    Identity identity;
+    IdentityS identity;
 
     DECLARE_B_SERIALIZE_FUNC
     J_SERIALIZE_MAP_ONE( "identity" , identity )
@@ -674,7 +675,7 @@ struct CobotDynamicPlanRemove : Data<&command::CobotDynamicPlanRemove,
                                       Message::Type::Answer>
 {
     // Идентификатор плана
-    Identity identity;
+    IdentityS identity;
 
     DECLARE_B_SERIALIZE_FUNC
     J_SERIALIZE_MAP_ONE( "identity" , identity )
