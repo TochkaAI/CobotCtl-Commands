@@ -466,13 +466,19 @@ struct CobotMovePoseAction : CobotAction
     // Координаты TCP
     QList<CobotPose> poses;
 
+    // Полный путь до файла с координатами. Используется для загрузки
+    // координат из конфигурационного файла. Для API  параметр  носит
+    // информационный характер
+    QString posesFilePath;
+
     DECLARE_B_SERIALIZE_FUNC
 
     J_SERIALIZE_BEGIN
         J_SERIALIZE_BASE( CobotAction )
-        J_SERIALIZE_MAP_OPT ( "dimension", dimension )
-        J_SERIALIZE_MAP_OPT ( "dynamics" , dynamics  )
-        J_SERIALIZE_MAP_ITEM( "poses"    , poses     )
+        J_SERIALIZE_MAP_OPT ( "dimension"       , dimension     )
+        J_SERIALIZE_MAP_OPT ( "dynamics"        , dynamics      )
+        J_SERIALIZE_MAP_ITEM( "poses"           , poses         )
+        J_SERIALIZE_MAP_OPT ( "poses_file_path" , posesFilePath )
     J_SERIALIZE_END
 };
 
@@ -491,7 +497,9 @@ struct CobotMovePathAction : CobotAction
     // Координаты TCP
     QList<CobotPose> poses;
 
-    // Полный путь до файла с координатами
+    // Полный путь до файла с координатами. Используется для загрузки
+    // координат из конфигурационного файла. Для API  параметр  носит
+    // информационный характер
     QString posesFilePath;
 
     DECLARE_B_SERIALIZE_FUNC

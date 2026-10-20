@@ -328,6 +328,7 @@ void CobotMovePoseAction::toRaw(bserial::DataStream& stream) const
     stream << dimension;
     stream << dynamics;
     stream << poses;
+    stream << posesFilePath;
     B_SERIALIZE_RETURN
 }
 
@@ -338,6 +339,7 @@ void CobotMovePoseAction::fromRaw(const bserial::RawVector& vect)
     stream >> dimension;
     stream >> dynamics;
     stream >> poses;
+    stream >> posesFilePath;
     B_DESERIALIZE_END
 }
 
