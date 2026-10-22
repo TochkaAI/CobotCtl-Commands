@@ -589,8 +589,8 @@ struct CobotPlan : clife_base
 
     CobotAction::List actions;
 
-    typedef Identity::Find<CobotPlan> CobotPlanFind;
-    typedef lst::List<CobotPlan, CobotPlanFind, clife_alloc<CobotPlan>> List;
+    typedef Identity::Compare<CobotPlan, Identity::CompareField::NameIndex> CobotPlanCompare;
+    typedef lst::List<CobotPlan, CobotPlanCompare, clife_alloc<CobotPlan>> List;
 
     // Вспомогательная структура для сериализации гетерогенного списка действий
     struct ActionSerialize
