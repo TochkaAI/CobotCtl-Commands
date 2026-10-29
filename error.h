@@ -25,6 +25,7 @@ DECL_ERROR_CODE(std_exception,             20, "4d8a4671-b5a7-4c66-83c2-9a4ac4c7
 DECL_ERROR_CODE(cobot_path_buff_valid,     20, "f90d6c58-5650-455b-9dbd-8970d9612536", u8"Ошибка верификации данных для функции %1")
 DECL_ERROR_CODE(no_active_executing_plan,  20, "6bebf22c-597b-4103-8a5c-1372c5afe2e9", u8"Ни один план не выполняется")
 DECL_ERROR_CODE(plan_not_found,            20, "4e753576-bb91-4b51-920e-0282f63e4022", u8"План команд %1 не найден")
+DECL_ERROR_CODE(plan_identity_not_set,     20, "d0fb0015-da98-4c11-9ca5-e178de9c44c9", u8"Идентификатор плана команд не задан")
 DECL_ERROR_CODE(dynamic_plan_not_found,    20, "9b015336-c74c-420f-8741-eff24e0a8703", u8"Динамический план команд %1 не найден")
 DECL_ERROR_CODE(plan_already_executing,    20, "9b9780ac-eae3-45b5-a06f-3f0ebbf1ecf6", u8"Выполняется другой план команд %1")
 DECL_ERROR_CODE(plan_execution_stop,       20, "45875b0f-af98-4e06-90e7-7d0ac5c71af3", u8"Выполнение плана команд %1 остановлено принудительно")
