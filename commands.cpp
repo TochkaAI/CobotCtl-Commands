@@ -23,6 +23,7 @@ REGISTRY_COMMAND_SINGLPROC(CobotLastAction,        "b7b8e0b0-de01-4344-9d58-5bc4
 REGISTRY_COMMAND_SINGLPROC(CobotPlanBegin,         "6df740aa-3715-4e9b-9f2f-5a4705001150")
 REGISTRY_COMMAND_SINGLPROC(CobotPlanEnd,           "d346775f-e071-45c2-8f81-7504263c591e")
 REGISTRY_COMMAND_SINGLPROC(CobotPlanAction,        "8f02448e-4020-4bdd-aa95-6f55b53ec5d6")
+REGISTRY_COMMAND_SINGLPROC(CobotMoveProgress,      "bc0e00f5-e60f-4038-816a-dfe1d97716e9")
 REGISTRY_COMMAND_SINGLPROC(CobotCurrentPose,       "58e3b0da-05ca-40b5-ae55-d4f58c079f7c")
 REGISTRY_COMMAND_SINGLPROC(CobotPowerInfo,         "29f7a7c2-829f-44a6-a8b9-cfa911f1b534")
 REGISTRY_COMMAND_SINGLPROC(CobotPowerOn,           "ff5c9604-b2ad-408d-a9e4-787c6a805d66")
@@ -186,6 +187,30 @@ void CobotPlanEnd::fromRaw(const bserial::RawVector& vect)
     B_DESERIALIZE_V1(vect)
     stream >> identity;
     stream >> dynamic;
+    B_DESERIALIZE_END
+}
+
+void CobotMoveProgress::toRaw(bserial::DataStream& stream) const
+{
+    B_SERIALIZE_V1
+    stream << plan;
+    stream << dynamic;
+    stream << action;
+    stream << phase;
+    stream << indexMove;
+    stream << totalMoves;
+    B_SERIALIZE_RETURN
+}
+
+void CobotMoveProgress::fromRaw(const bserial::RawVector& vect)
+{
+    B_DESERIALIZE_V1(vect)
+    stream >> plan;
+    stream >> dynamic;
+    stream >> action;
+    stream >> phase;
+    stream >> indexMove;
+    stream >> totalMoves;
     B_DESERIALIZE_END
 }
 

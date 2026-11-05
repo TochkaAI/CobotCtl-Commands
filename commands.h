@@ -83,6 +83,12 @@ extern const QUuidEx CobotPlanEnd;
 extern const QUuidEx CobotPlanAction;
 
 /**
+  Событие эмитируется в моменты, когда происходит движение кобота по координа-
+  там траектории. Событие эмитируется на протяжении выполнения всего плана.
+*/
+extern const QUuidEx CobotMoveProgress;
+
+/**
   Команда возвращает текущие координаты кобота
 */
 extern const QUuidEx CobotCurrentPose;
@@ -329,6 +335,45 @@ struct CobotPlanEnd : Data<&command::CobotPlanEnd,
 struct CobotPlanAction : CobotActionInfo, Data<&command::CobotPlanAction,
                                                 Message::Type::Event>
 {};
+
+struct CobotMoveProgress : Data<&command::CobotMoveProgress,
+                                 Message::Type::Event>
+{
+    // Идентификатор плана
+    IdentityS plan;
+
+    // Признак динамического плана
+    bool dynamic = {false};
+
+    // Идентификатор действия
+    IdentityS action;
+
+    enum class Phase : quint32
+    {
+        Unknown = 0,
+        Begin   = 1, // Событие эмитируется перед началом первого перемещения
+        End     = 2, // Событие эмитируется после выполнения всех перемещений
+        Move    = 3, // Событие эмитируется в момент текущего перемещения
+    };
+    Phase phase = {Phase::Unknown};
+
+    // Индекс текущего перемещения
+    int indexMove = {-1};
+
+    // Общее количество перемещений в рамках выполняемого плана
+    int totalMoves = {-1};
+
+    DECLARE_B_SERIALIZE_FUNC
+
+    J_SERIALIZE_BEGIN
+        J_SERIALIZE_MAP_ITEM( "plan"        , plan       )
+        J_SERIALIZE_MAP_ITEM( "dynamic"     , dynamic    )
+        J_SERIALIZE_MAP_ITEM( "action"      , action     )
+        J_SERIALIZE_MAP_ITEM( "phase"       , phase      )
+        J_SERIALIZE_MAP_ITEM( "index_move"  , indexMove  )
+        J_SERIALIZE_MAP_ITEM( "total_moves" , totalMoves )
+    J_SERIALIZE_END
+};
 
 struct CobotPose : std::vector<double>
 {
