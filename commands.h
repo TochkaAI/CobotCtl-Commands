@@ -237,8 +237,10 @@ struct CobotExecutePlan : Data<&command::CobotExecutePlan,
                                 Message::Type::Command,
                                 Message::Type::Answer>
 {
-    // Идентификатор плана
-    IdentityS identity;
+    // Идентификатор плана.
+    // Поиск плана осуществляется по двум параметрам: name, index.
+    // Если параметр index опущен, он считается равным -1
+    IdentityS identity = Identity{"" /*name*/, -1 /*index*/};
 
     // Признак динамического плана
     bool dynamic = {false};
