@@ -3,6 +3,8 @@
 #include "pproto/commands/base.h"
 #include "pproto/commands/time_spec.h"
 
+#include "commands/cobot_pose.h"
+
 namespace pproto {
 namespace command {
 
@@ -24,34 +26,50 @@ struct Coordinates : Data<&command::Coordinates,
 {
     typedef container_ptr<Coordinates> Ptr;
 
-    Coordinates();
+    // Глобальные координаты TCP кобота. Формат: x, y, z, rx, ry, rz
+    CobotPose globalPose;
 
-    union {
-        struct {
-            double x  = {0}; // Координата по оси  X (в метрах)
-            double y  = {0}; // Координата по оси  Y (в метрах)
-            double z  = {0}; // Координата по оси  Z (в метрах)
-            double rx = {0}; // Поворот вокруг оси X (в радианах)
-            double ry = {0}; // Поворот вокруг оси Y (в радианах)
-            double rz = {0}; // Поворот вокруг оси Z (в радианах)
-        };
-        double data[6];
-    };
+    // Признак наличия локальных координат для TCP кобота. Параметр может
+    // принимать значения 0, 1.
+    quint8 localExists = {0};
 
-    data::TimeSpec time; // Время получения координат (UTC)
+    // Локальные координаты TCP кобота в пользовательской системе координат.
+    // Формат: x, y, z, rx, ry, rz
+    CobotPose localPose;
+
+    // Время получения координат (UTC)
+    data::TimeSpec time;
 
     DECLARE_B_SERIALIZE_FUNC
-
-    J_SERIALIZE_BEGIN
-        J_SERIALIZE_ITEM( x    )
-        J_SERIALIZE_ITEM( y    )
-        J_SERIALIZE_ITEM( z    )
-        J_SERIALIZE_ITEM( rx   )
-        J_SERIALIZE_ITEM( ry   )
-        J_SERIALIZE_ITEM( rz   )
-        J_SERIALIZE_ITEM( time )
-    J_SERIALIZE_END
+    DECLARE_J_SERIALIZE_FUNC
 };
+
+template<typename This, typename Packer>
+Packer& Coordinates::jserialize(const This* ct, Packer& p)
+{
+    This* t = const_cast<This*>(ct);
+
+    p.startObject();
+
+    if (p.isWriter())
+    {
+        J_SERIALIZE_MAP_ITEM( "glp" , globalPose  )
+        J_SERIALIZE_MAP_ITEM( "lce" , localExists )
+
+        if (t->localExists)
+            J_SERIALIZE_MAP_ITEM( "lcp" , localPose )
+
+        J_SERIALIZE_MAP_ITEM( "time" , time )
+    }
+    else if (p.isReader())
+    {
+        J_SERIALIZE_MAP_ITEM( "glp"  , globalPose  )
+        J_SERIALIZE_MAP_ITEM( "lce"  , localExists )
+        J_SERIALIZE_MAP_OPT ( "lcp"  , localPose   )
+        J_SERIALIZE_MAP_ITEM( "time" , time        )
+    }
+    return p.endObject();
+}
 
 } // namespace data
 } // namespace pproto
