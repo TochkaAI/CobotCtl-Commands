@@ -28,6 +28,8 @@ Product {
     cpp.includePaths: [".."]
 
     files: [
+        "cobot_pose.cpp",
+        "cobot_pose.h",
         "commands.cpp",
         "commands.h",
         "coordinates.cpp",

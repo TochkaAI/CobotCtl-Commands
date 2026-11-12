@@ -6,7 +6,7 @@
 #include "pproto/commands/base.h"
 #include "pproto/commands/identity.h"
 
-#include <vector>
+#include "commands/cobot_pose.h"
 
 namespace pproto {
 namespace command {
@@ -375,25 +375,6 @@ struct CobotMoveProgress : Data<&command::CobotMoveProgress,
         J_SERIALIZE_MAP_ITEM( "index_move"  , indexMove  )
         J_SERIALIZE_MAP_ITEM( "total_moves" , totalMoves )
     J_SERIALIZE_END
-};
-
-struct CobotPose : std::vector<double>
-{
-    CobotPose() = default;
-    CobotPose(CobotPose&&) = default;
-    CobotPose(const CobotPose&) = default;
-
-    CobotPose& operator= (CobotPose&&) = default;
-    CobotPose& operator= (const CobotPose&) = default;
-
-    CobotPose(std::vector<double>&&);
-    CobotPose(const std::vector<double>&);
-
-    CobotPose& operator= (std::vector<double>&&);
-    CobotPose& operator= (const std::vector<double>&);
-
-    DECLARE_B_SERIALIZE_FUNC
-    DECLARE_J_SERIALIZE_FUNC
 };
 
 /**
@@ -779,17 +760,6 @@ struct CobotCurrentPoseA : Data<&command::CobotCurrentPose,
 //------------------------ Функции json-сериализации -------------------------
 
 template<typename This, typename Packer>
-Packer& CobotPose::jserialize(const This* ct, Packer& p)
-{
-    This* t = const_cast<This*>(ct);
-    //p.startObject();
-    std::vector<double> *v = t;
-    p & *v;
-    //return p.endObject();
-    return p;
-}
-
-template<typename This, typename Packer>
 Packer& CobotPlan::jserialize(const This* ct, Packer& p)
 {
     This* t = const_cast<This*>(ct);
@@ -910,4 +880,3 @@ Line& operator<< (Line&, const pproto::CobotActionState&);
 Line& operator<< (Line&, const pproto::CobotActionPhase&);
 
 } // namespace alog
-
