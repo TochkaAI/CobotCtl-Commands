@@ -28,10 +28,8 @@ template<typename This, typename Packer>
 Packer& CobotPose::jserialize(const This* ct, Packer& p)
 {
     This* t = const_cast<This*>(ct);
-    //p.startObject();
-    std::vector<double> *v = t;
+    std::vector<double>* v = t;
     p & *v;
-    //return p.endObject();
     return p;
 }
 

@@ -26,8 +26,12 @@ void CobotPose::toRaw(bserial::DataStream& stream) const
 {
     B_SERIALIZE_V1
     stream << quint32(size());
-    for (auto it = begin(); it < end(); ++it)
-        stream << *it;
+
+    // --- Оставлено для примера ---
+    // for (auto it = begin(); it < end(); ++it)
+    //     stream << *it;
+
+    stream.writeRawData((char*)data(), sizeof(double) * size());
     B_SERIALIZE_RETURN
 }
 
@@ -36,15 +40,21 @@ void CobotPose::fromRaw(const bserial::RawVector& vect)
     B_DESERIALIZE_V1(vect)
     quint32 size;
     stream >> size;
-    for (quint32 i = 0; i < size; ++i)
-    {
-        if (stream.atEnd())
-            break;
 
-        double value;
-        stream >> value;
-        push_back(value);
-    }
+    // --- Оставлено для примера ---
+    // for (quint32 i = 0; i < size; ++i)
+    // {
+    //     if (stream.atEnd())
+    //         break;
+
+    //     double value;
+    //     stream >> value;
+    //     push_back(value);
+    // }
+
+    std::vector<double> v; v.resize(size, 0);
+    stream.readRawData((char*)v.data(), sizeof(double) * size);
+    std::vector<double>::operator= (std::move(v));
     B_DESERIALIZE_END
 }
 
